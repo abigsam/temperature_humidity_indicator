@@ -7,17 +7,17 @@
   * @brief   Main program body
   ******************************************************************************
   * History:
-  * 25.09.18 v1.1 -- Add low power I2C read/write (WFI)
-  * 27.10.18 v1.2 -- Fix LowBat sign problem;
-  *                  add define "BATTERY_mV" where low voltage specified in mV;
-  *                  increase "LIGHTSENSOR_LEVEL" from 820 to 880
+  * 25.09.18 v01 -- Add low power I2C read/write (WFI)
+  * 27.10.18 v02 -- Fix LowBat sign problem;
+  *                 add define "BATTERY_mV" where low voltage specified in mV;
+  *                 increase "LIGHTSENSOR_LEVEL" from 820 to 880
   *
-  * 27.10.18 v1.3 -- Fix sleep functiones: skip time less than MAX values;
-  *                  updated LSI frequency (measured with stopwatch)
-  * 27.10.18 v1.4 -- Fix LCD frame rate: set to ~30 Hz;
-  *                  consumption in sleep (day) decreased to ~7 uA
-  * 27.10.18 v1.5 -- Measure time and show data time now can be configured
-  *                  separately
+  * 27.10.18 v03 -- Fix sleep functiones: skip time less than MAX values;
+  *                 updated LSI frequency (measured with stopwatch)
+  * 27.10.18 v04 -- Fix LCD frame rate: set to ~30 Hz;
+  *                 consumption in sleep (day) decreased to ~7 uA
+  * 27.10.18 v05 -- Measure time and show data time now can be configured
+  *                 separately
   *
   ******************************************************************************
   * TODO:
@@ -44,7 +44,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define FIRMWARE_VERSION        ("f15") //Three chars only
+#define FIRMWARE_VERSION        ("f05") //Three chars only
 #define TEST_LSI                (0)     //If need output LSI clock to PC4 set it to '1'
 //Time defines
 #define DISPLAY_TIME_S          (3UL)   //Update period for LCD in seconds
@@ -124,7 +124,7 @@ void main(void)
     sleep_s(1u);
     TRH_LCD_clear();
     sleep_ms(500u);
-    TRH_LCD_DisplayString((uint8_t *)FIRMWARE, TRUE, 0);
+    TRH_LCD_DisplayString((uint8_t *)FIRMWARE, FALSE, 0);
     sleep_s(1u);
     TRH_LCD_clear();
     //sleep_ms(500u);
