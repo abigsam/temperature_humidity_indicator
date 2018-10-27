@@ -127,7 +127,7 @@ void main(void)
     TRH_LCD_DisplayString((uint8_t *)FIRMWARE, TRUE, 0);
     sleep_s(1u);
     TRH_LCD_clear();
-    sleep_ms(500u);
+    //sleep_ms(500u);
   
     /**************************************
     * Init BSP
@@ -182,6 +182,8 @@ void main(void)
       
       /* Show temperature and refresh it when time */
       case (MeasureT):
+        if (refreshDataCnt >= REFRESH_DATA_PERIOD) { isNeedRefresh = REFRESH_VALUE; }
+        else { isNeedRefresh = USE_OLD_VALUE; }
         if (showConfig != SHOW_ONLY_RH) {
           if (error = BSP_showT(NO_DECIMAL, isNeedRefresh)) { error_handler(" T read err ", error); }
         }
@@ -209,8 +211,6 @@ void main(void)
         lightChkCnt++;
         batCheckCnt++;
         refreshDataCnt++;
-        if (refreshDataCnt >= REFRESH_DATA_PERIOD) { isNeedRefresh = REFRESH_VALUE; }
-        else { isNeedRefresh = USE_OLD_VALUE; }
         sleep_s((uint32_t)DISPLAY_TIME_S);
       break;
       
