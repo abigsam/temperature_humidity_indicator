@@ -16,15 +16,17 @@
   *                  updated LSI frequency (measured with stopwatch)
   * 27.10.18 v1.4 -- Fix LCD frame rate: set to ~30 Hz;
   *                  consumption in sleep (day) decreased to ~7 uA
-  *
+  * 27.10.18 v1.5 -- Measure time and show data time now can be configured
+  *                  separately
   *
   ******************************************************************************
   * TODO:
   * -- Enable/disable SHT21 by pin
-  * -- Decrease LCD refresh rate when temperature is low
   * -- Disable clock for I2C module when comunication no needed
   * -- Decrease number measure per time (measure ones in 3..5 minutes; between
   *    this time show old data
+  * -- Don't convert T/RH values to string; use two screens and chenge them
+  *    when need show old data
   * 
   ******************************************************************************
   */
@@ -42,10 +44,11 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define FIRMWARE_VERSION        ("f14") //Three chars only
+#define FIRMWARE_VERSION        ("f15") //Three chars only
 #define TEST_LSI                (0)     //If need output LSI clock to PC4 set it to '1'
 //Time defines
-#define DISPLAY_TIME_S          (5UL)   //Update period for LCD in seconds
+#define DISPLAY_TIME_S          (3UL)   //Update period for LCD in seconds
+#define REFRESH_DATA_S          (60UL)  //Refresh data (T and RH) in seconds
 #define LIGHT_CHECK_MIN         (5UL)   //Light checking period in minutes
 #define BAT_CHECK_HOURS         (24UL)  //Checking battery period, hours
 #define LIGHTSENSOR_LEVEL       (880u)  //Bigger value darker ambient light
@@ -55,6 +58,7 @@
 #define DELAY_MS(us)            { delay_lowp_ms(us); }
 #define LIGHT_CHECK_PERIOD      ((uint32_t) (LIGHT_CHECK_MIN*60UL / DISPLAY_TIME_S) )
 #define BAT_CHECK_PERIOD        ((uint32_t) (BAT_CHECK_HOURS*60UL*60UL / DISPLAY_TIME_S) )
+#define REFRESH_DATA_PERIOD     ((uint32_t) (REFRESH_DATA_S / DISPLAY_TIME_S) )
 #define LOWBAT_RAW              ((uint16_t) ((1224UL * 1024UL) / BATTERY_mV) ) //ADC_value = Vref[1.224 V] * (2^10)/ Vbat_min
 
 /* Private variables ---------------------------------------------------------*/
@@ -91,9 +95,11 @@ void main(void)
     DisplConfig showConfig;
     uint32_t batCheckCnt = 0u;
     uint32_t lightChkCnt = 0u;
+    uint32_t refreshDataCnt = 0u;
     fsm_enum fsm_state = PowerUp;
     bool lightCheck = TRUE, lightPrevious = TRUE;
-    bool measuresEnd = FALSE;
+    bool dataShowEnd = FALSE;
+    ShowValueType isNeedRefresh;
     
     
 #if (TEST_LSI == 1)
@@ -133,8 +139,6 @@ void main(void)
     * Configure start state for FSM; run light & lowbat cheking
     **************************************/
     fsm_state = PowerUp;
-    lightChkCnt = LIGHT_CHECK_PERIOD;
-    TRH_LCD_DisplayLowBat( BSP_testBattery(LOWBAT_RAW) );
     
     /**************************************
     * Main FSM
@@ -172,33 +176,41 @@ void main(void)
       /* Check config: show only T, only RH or both */
       case (CheckShowConfig):
         showConfig = BSP_getShowMode();
-        measuresEnd = FALSE;
+        dataShowEnd = FALSE;
         fsm_state = MeasureT;
       break;
       
-      /* Measure temperature and show it */
+      /* Show temperature and refresh it when time */
       case (MeasureT):
         if (showConfig != SHOW_ONLY_RH) {
-          if (error = BSP_showT(NO_DECIMAL, REFRESH_VALUE)) { error_handler(" T read err ", error); }
+          if (error = BSP_showT(NO_DECIMAL, isNeedRefresh)) { error_handler(" T read err ", error); }
         }
         fsm_state = SleepDay;
       break;
       
-      /* Measure humidity and show it */
+      /* Show humidity value and refresh it when time */
       case (MeasureRH):
         if (showConfig != SHOW_ONLY_T) {
-          if (error = BSP_showRH(NO_DECIMAL, REFRESH_VALUE)) { error_handler(" RH read err ", error); }
+          if (error = BSP_showRH(NO_DECIMAL, isNeedRefresh)) { error_handler(" RH read err ", error); }
         }
-        measuresEnd = TRUE;
+        dataShowEnd = TRUE;
         fsm_state = SleepDay;
       break;
       
       /* Update conters & sleep */
       case (SleepDay):
-        if (measuresEnd) { fsm_state = CheckLight; }
-        else { fsm_state = MeasureRH; }
+        if (dataShowEnd) {
+          fsm_state = CheckLight;
+          if (refreshDataCnt > REFRESH_DATA_PERIOD) { refreshDataCnt = 0u; }
+        }
+        else {
+          fsm_state = MeasureRH;
+        }
         lightChkCnt++;
         batCheckCnt++;
+        refreshDataCnt++;
+        if (refreshDataCnt >= REFRESH_DATA_PERIOD) { isNeedRefresh = REFRESH_VALUE; }
+        else { isNeedRefresh = USE_OLD_VALUE; }
         sleep_s((uint32_t)DISPLAY_TIME_S);
       break;
       
@@ -213,7 +225,10 @@ void main(void)
       case (PowerUp):
       default:
         showConfig = SHOW_T_RH;
-        measuresEnd = FALSE;
+        dataShowEnd = FALSE;
+        lightChkCnt = LIGHT_CHECK_PERIOD;
+        refreshDataCnt =  REFRESH_DATA_PERIOD;
+        TRH_LCD_DisplayLowBat( BSP_testBattery(LOWBAT_RAW) );
         fsm_state = MeasureT;
       break;
       }

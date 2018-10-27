@@ -1,11 +1,12 @@
-/*
-
-  For BSP_sleep use Active-HALT (need use RTC wake-up timer and LSE, 3.1 uA with LCD) or Low power wait mode (3.7 uA without LCD)
-  For ADC measure WFI or WFE
-  For delay_ms use Low power wait mode
-
-
-*/
+/**
+  ******************************************************************************
+  * @file    trh_indicator_bsp.h
+  * @author  abigsam
+  * @version v1.0
+  * @date    25.09.2018
+  * @brief   BSP for TRH indicator header
+  ******************************************************************************
+  */
 
 #ifndef __TRH_INDICATOR_BSP_H
 #define __TRH_INDICATOR_BSP_H
@@ -36,7 +37,7 @@
 #define TRH_SENSOR_PWR_PIN      (GPIO_Pin_5)
 #define TRH_SENSOR_PWR_PORT     (GPIOA)
 //
-#define TRH_MEASURE_MEAN        (3) //Number of measurements for meaning
+#define TRH_MEASURE_MEAN        (2) //Number of measurements for meaning
 //
 #define TRH_DELAY_US(us)        { delay_lowp_ms(us); }
 #define TRH_SLEEP_MS(ms)        { sleep_ms(ms); }
