@@ -226,7 +226,8 @@ void main(void)
       default:
         showConfig = SHOW_T_RH;
         dataShowEnd = FALSE;
-        lightChkCnt = LIGHT_CHECK_PERIOD;
+        lightChkCnt = 0u;
+        batCheckCnt = 0u;
         refreshDataCnt =  REFRESH_DATA_PERIOD;
         TRH_LCD_DisplayLowBat( BSP_testBattery(LOWBAT_RAW) );
         fsm_state = MeasureT;
