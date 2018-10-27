@@ -1,8 +1,20 @@
-
-
-
-
-
+/**
+  ******************************************************************************
+  * @file    trh_lcd.h
+  * @author  abigsam
+  * @version v1.1
+  * @date    25.09.2018
+  * @brief   LCD driver header
+  ******************************************************************************
+  * History:
+  * 27.10.18 v1.1 -- Fix LCD frame rate defines
+  * 
+  ******************************************************************************
+  * TODO:
+  * -- Add functiones to change contrast
+  * 
+  ******************************************************************************
+  */
 
 #ifndef __TRH_LCD_H
 #define __TRH_LCD_H
@@ -14,25 +26,22 @@
 
 #include "stm8l15x.h"
 
-#define LCD_CHAR_HUMIDITY   ('H')
-#define LCD_CHAR_DEGREES    ('d')
+#define LCD_CHAR_HUMIDITY   ('H') //Char for humidity
+#define LCD_CHAR_DEGREES    ('d') //Char for degrees sign
+#define LCD_MAX_POSITION    (3U)  //Max. number of positiones in this LCD
 
-#define LCD_USE_LSE         (0)
-
-#define LCD_PRESCALLER      (LCD_Prescaler_1)
-#define LCD_DIVIDER         (LCD_Divider_31)
+/* Frame = (LSI/2) / ( LCD_PRESCALLER * LCD_DIVIDER ) */
+#define LCD_PRESCALLER      (LCD_Prescaler_32) //For ~30Hz frame rate (RM, p. 262)
+#define LCD_DIVIDER         (LCD_Divider_16)   //For ~30Hz frame rate (RM, p. 262)
 #define LCD_VOLTAGE_SOURCE  (LCD_VoltageSource_Internal)
-#define LCD_CONTRAST        (LCD_Contrast_3V0)
+#define LCD_CONTRAST        (LCD_Contrast_Level_3) //Default contrast (LCD_Contrast_Level_3: Medium Density / High Density Maximum Voltage = 2.90V / 2.99V)
 
-#define LCD_MAX_POSITION    (3U)
-
-
+/* Type defines */
 typedef enum {
     LCD_SIGN_NONE = 0,
     LCD_SIGN_PLUS,
     LCD_SIGN_MINUS
 } LCD_SignTypeDef;
-
 
 
 /*--------------------------------------------------------
@@ -55,12 +64,11 @@ void TRH_LCD_ShowAll(void);
 void TRH_LCD_DisplayString(uint8_t *ptr, bool show_dp, uint8_t point_pos);
 void TRH_LCD_DisplayLowBat(bool low_bat);
 void TRH_LCD_ShowSign(LCD_SignTypeDef sign);
+void TRH_LCD_Control(bool state);
 
 void TRH_LCD_update(void);  //Inser this in LCD interrupt
 
-void TRH_LCD_debug(void);
-
-void TRH_LCD_Control(bool state);//, bool initRTCclock);
+//void TRH_LCD_debug(void);
 
 #ifdef __cplusplus
 }

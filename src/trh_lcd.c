@@ -1,7 +1,11 @@
-
-
-
-
+/**
+  ******************************************************************************
+  * @file    trh_lcd.c
+  * @author  abigsam
+  * @date    25.09.2018
+  * @brief   LCD driver source
+  ******************************************************************************
+  */
 
 #include "trh_lcd.h"
 #include "utils.h"
@@ -270,12 +274,7 @@ void TRH_LCD_init(bool initRTCclock) {
 
     if (initRTCclock) {
         CLK_PeripheralClockConfig(CLK_Peripheral_RTC, ENABLE);
-//#if (USE_LSE > 0)
-//        CLK_RTCClockConfig(CLK_RTCCLKSource_LSE, CLK_RTCCLKDiv_1);
-//#else
         CLK_RTCClockConfig(CLK_RTCCLKSource_LSI, CLK_RTCCLKDiv_1);
-//#endif
-    
     }
   
     /* Initialize the LCD */
@@ -291,7 +290,7 @@ void TRH_LCD_init(bool initRTCclock) {
     LCD_PortMaskConfig(LCD_PortMaskRegister_3, 0x0f); //24...27
   
     /* To set contrast to mean value */
-    LCD_ContrastConfig(LCD_Contrast_3V0);
+    LCD_ContrastConfig(LCD_CONTRAST); //LCD_Contrast_Level_3: Medium Density / High Density Maximum Voltage = 2.90V / 2.99V
     LCD_DeadTimeConfig(LCD_DeadTime_0);
     LCD_PulseOnDurationConfig(LCD_PulseOnDuration_1);
     
@@ -303,7 +302,7 @@ void TRH_LCD_init(bool initRTCclock) {
         lcdRam[cnt] = LCD_RAM_RESET_VALUE;
     }
     /* Clear lowbatFlag */
-    lowbatFlag = 0u;
+    lowbatFlag = FALSE;
     
     /* Enable LCD peripheral */ 
     LCD_Cmd(ENABLE);
@@ -318,7 +317,7 @@ void TRH_LCD_init(bool initRTCclock) {
   */
 void TRH_LCD_clear(void) {
     clear_all();
-    lowbatFlag = 0u;
+    lowbatFlag = FALSE;
     wait_for_update();
 }
 
@@ -422,14 +421,14 @@ void TRH_LCD_update(void) {
 
 
 //For debug
-void TRH_LCD_debug(void) {
-    char temp[3] = {'0', '1', '2'};
-    //
-    put_char(temp,   0);
-    put_char(temp+1, 1);
-    put_char(temp+2, 2);
-    wait_for_update();
-}
+//void TRH_LCD_debug(void) {
+//    char temp[3] = {'0', '1', '2'};
+//    //
+//    put_char(temp,   0);
+//    put_char(temp+1, 1);
+//    put_char(temp+2, 2);
+//    wait_for_update();
+//}
 
 /**
   * @brief  Control LCD
@@ -447,5 +446,3 @@ void TRH_LCD_Control(bool state) {//, bool initRTCclock) {
     CLK_PeripheralClockConfig(CLK_Peripheral_LCD, DISABLE);
   }
 }
-
-//EOF

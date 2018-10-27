@@ -14,7 +14,10 @@
   *
   * 27.10.18 v1.3 -- Fix sleep functiones: skip time less than MAX values;
   *                  updated LSI frequency (measured with stopwatch)
-  * 
+  * 27.10.18 v1.4 -- Fix LCD frame rate: set to ~30 Hz;
+  *                  consumption in sleep (day) decreased to ~7 uA
+  *
+  *
   ******************************************************************************
   * TODO:
   * -- Enable/disable SHT21 by pin
@@ -39,20 +42,20 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define FIRMWARE_VERSION        ("f13") //Three chars only
-#define TEST_LSI                (0) //If need output LSI clock to PC4 set it to '1'
+#define FIRMWARE_VERSION        ("f14") //Three chars only
+#define TEST_LSI                (0)     //If need output LSI clock to PC4 set it to '1'
 //Time defines
-#define DISPLAY_TIME_S          (5)  //Update period for LCD in seconds (used on startup)
-#define LIGHT_CHECK_MIN         (5)  //Light checking period in minutes
-#define BAT_CHECK_HOURS         (24) //Checking battery period, hours
-#define LIGHTSENSOR_LEVEL       ((uint16_t) 880) //Bigger value darker ambient light
+#define DISPLAY_TIME_S          (5UL)   //Update period for LCD in seconds
+#define LIGHT_CHECK_MIN         (5UL)   //Light checking period in minutes
+#define BAT_CHECK_HOURS         (24UL)  //Checking battery period, hours
+#define LIGHTSENSOR_LEVEL       (880u)  //Bigger value darker ambient light
 #define BATTERY_mV              (2000UL) //Lowbat voltage, mV; can be lower than 1224 mV
-#define LOWBAT_RAW              ((uint16_t) ((1224UL * 1024UL)/BATTERY_mV) ) //ADC_value = Vref[1.224 V] * (2^10)/ Vbat_min
 
 /* Private macro -------------------------------------------------------------*/
 #define DELAY_MS(us)            { delay_lowp_ms(us); }
-#define LIGHT_CHECK_PERIOD      ((uint32_t) LIGHT_CHECK_MIN*60/DISPLAY_TIME_S)
-#define BAT_CHECK_PERIOD        ((uint32_t) BAT_CHECK_HOURS*60*60/DISPLAY_TIME_S)
+#define LIGHT_CHECK_PERIOD      ((uint32_t) (LIGHT_CHECK_MIN*60UL / DISPLAY_TIME_S) )
+#define BAT_CHECK_PERIOD        ((uint32_t) (BAT_CHECK_HOURS*60UL*60UL / DISPLAY_TIME_S) )
+#define LOWBAT_RAW              ((uint16_t) ((1224UL * 1024UL) / BATTERY_mV) ) //ADC_value = Vref[1.224 V] * (2^10)/ Vbat_min
 
 /* Private variables ---------------------------------------------------------*/
 typedef enum {
@@ -125,11 +128,17 @@ void main(void)
     **************************************/
     if (error = BSP_init()) { error_handler(" BSP init err ", error); }
     DELAY_MS(100);
+    
+    /**************************************
+    * Configure start state for FSM; run light & lowbat cheking
+    **************************************/
+    fsm_state = PowerUp;
+    lightChkCnt = LIGHT_CHECK_PERIOD;
     TRH_LCD_DisplayLowBat( BSP_testBattery(LOWBAT_RAW) );
     
-    fsm_state = PowerUp;
-    showConfig = SHOW_T_RH;
-    
+    /**************************************
+    * Main FSM
+    **************************************/
     for(;;)
     {
       switch(fsm_state)
@@ -140,7 +149,7 @@ void main(void)
         fsm_state = CheckBattery;
         if (lightChkCnt >= LIGHT_CHECK_PERIOD) {
           lightChkCnt = 0u;
-          lightCheck = BSP_checkAmbientLight(LIGHTSENSOR_LEVEL);
+          lightCheck = BSP_checkAmbientLight((uint16_t)LIGHTSENSOR_LEVEL);
           if (lightCheck != lightPrevious) { //If state different, Enable or Disable LCD
             TRH_LCD_Control(lightCheck);
             lightPrevious = lightCheck;
