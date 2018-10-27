@@ -2,19 +2,25 @@
   ******************************************************************************
   * @file    main.c
   * @author  abigsam
-  * @version v1.1
+  * @version v1.2
   * @date    25.09.2018
   * @brief   Main program body
   ******************************************************************************
   * History:
   * 25.09.18 v1.1 -- Add low power I2C read/write (WFI)
+  * 27.10.18 v1.2 -- Fix LowBat sign problem;
+  *                  add define "BATTERY_mV" where low voltage specified in mV;
+  *                  increase "LIGHTSENSOR_LEVEL" from 820 to 880
   *
   ******************************************************************************
   * TODO:
   * -- Enable/disable SHT21 by pin
   * -- Decrease LCD refresh rate when temperature is low
   * -- Disable clock for I2C module when comunication no needed
-  *
+  * -- Problem with lowpower delay duration
+  * -- Decrease number measure per time (measure ones in 3..5 minutes; between
+  *    this time show old data
+  * 
   ******************************************************************************
   */
 
@@ -31,14 +37,15 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define FIRMWARE_VERSION        ("f11") //Three chars only!
+#define FIRMWARE_VERSION        ("f12") //Three chars only!
 #define TEST_LSI                (0) //If need output LSI clock to PC4 set it to '1'
 //Time defines
 #define DISPLAY_TIME_S          (5)  //Update period for LCD in seconds (used on startup)
 #define LIGHT_CHECK_MIN         (5)  //Light checking period in minutes
 #define BAT_CHECK_HOURS         (24) //Checking battery period, hours
-#define LIGHTSENSOR_LEVEL       ((uint16_t) 820) //780)//820)//910 //Bigger value darker ambient light
-#define BATTERY_LEVEL           ((uint16_t) 501) //ADC_value = Vref[1.224 V] * (2^10)/ Vbat_min
+#define LIGHTSENSOR_LEVEL       ((uint16_t) 880) //Bigger value darker ambient light
+#define BATTERY_mV              (2000UL) //Lowbat voltage, mV; can be lower than 1224 mV
+#define LOWBAT_RAW              ((uint16_t) ((1224UL * 1024UL)/BATTERY_mV) ) //ADC_value = Vref[1.224 V] * (2^10)/ Vbat_min
 
 /* Private macro -------------------------------------------------------------*/
 #define DELAY_MS(us)            { delay_lowp_ms(us); }
@@ -116,7 +123,7 @@ void main(void)
     **************************************/
     if (error = BSP_init()) { error_handler(" BSP init err ", error); }
     DELAY_MS(100);
-    TRH_LCD_DisplayLowBat( BSP_testBattery(BATTERY_LEVEL) );
+    TRH_LCD_DisplayLowBat( BSP_testBattery(LOWBAT_RAW) );
     
     fsm_state = PowerUp;
     showConfig = SHOW_T_RH;
@@ -145,7 +152,7 @@ void main(void)
       /* Check battery status */
       case (CheckBattery):
         if (batCheckCnt >= BAT_CHECK_PERIOD) {
-          TRH_LCD_DisplayLowBat( BSP_testBattery(BATTERY_LEVEL) );
+          TRH_LCD_DisplayLowBat( BSP_testBattery(LOWBAT_RAW) );
           batCheckCnt = 0u;
         }
         fsm_state = CheckShowConfig;
@@ -187,8 +194,8 @@ void main(void)
       /* Sleep for the longer time when is dark */
       case (SleepNight):
         sleep_s((uint32_t)DISPLAY_TIME_S);
-        lightChkCnt = LIGHT_CHECK_PERIOD;
-        batCheckCnt = BAT_CHECK_PERIOD;
+        lightChkCnt = LIGHT_CHECK_PERIOD; //Check light after SleepNight
+        batCheckCnt = BAT_CHECK_PERIOD;   //Check battery after SleepNight
         fsm_state = CheckLight;
       break;
         

@@ -43,7 +43,7 @@ static void wait_for_update(void);
 static uint8_t convert_char(char *ch);
 static void show_dpoint(uint8_t pos);
 static void clear_all(void);
-
+static void control_lowbat(bool newState);
 
 
 /*--------------------------------------------------------

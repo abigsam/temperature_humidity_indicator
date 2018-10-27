@@ -67,8 +67,7 @@ const uint8_t NUMBER_MAP[10] = {
 
 /* Private variables */
 uint8_t lcdRam[LCD_RAM_BYTES] = {0};
-
-uint8_t tempFlag = 0u;
+bool lowbatFlag = FALSE;
 
 
 /*--------------------------------------------------------
@@ -240,6 +239,18 @@ static void clear_all(void) {
     }
 }
 
+/**
+  * @brief  Control "Low Bat" signa on LCD
+  * @note   Private
+  * @param  newState: new state of "low Bat" sign
+  * @retval None
+  */
+static void control_lowbat(bool newState) {
+  lowbatFlag = newState;
+  if (lowbatFlag) { LCD_LOWBAT_SET(); }
+  else            { LCD_LOWBAT_RESET(); }
+}
+
 
 /*--------------------------------------------------------
 --- Public functions
@@ -291,6 +302,8 @@ void TRH_LCD_init(bool initRTCclock) {
     for (cnt = 0u; cnt < LCD_RAM_BYTES; ++cnt) {
         lcdRam[cnt] = LCD_RAM_RESET_VALUE;
     }
+    /* Clear lowbatFlag */
+    lowbatFlag = 0u;
     
     /* Enable LCD peripheral */ 
     LCD_Cmd(ENABLE);
@@ -305,6 +318,7 @@ void TRH_LCD_init(bool initRTCclock) {
   */
 void TRH_LCD_clear(void) {
     clear_all();
+    lowbatFlag = 0u;
     wait_for_update();
 }
 
@@ -329,17 +343,21 @@ void TRH_LCD_DisplayString(uint8_t *ptr, bool show_dp, uint8_t point_pos) {
     uint8_t *p = NULL;
     clear_all();
     
-    //Detect if string has sign '+' or '-'
+    /* Detect if string has sign '+' or '-' */
     if ((*ptr) == '-') { ++ptr; TRH_LCD_ShowSign(LCD_SIGN_MINUS); }
     else if ((*ptr) == '+') { ++ptr; TRH_LCD_ShowSign(LCD_SIGN_PLUS); }
     
-    //Get last char before NULL
+    /* Get last char before NULL */
     p = str_getLast(ptr, LCD_MAX_POSITION+1);
     for (pcnt = 0u; (pcnt < LCD_MAX_POSITION) && (p >= ptr); ++pcnt, --p) {
         put_char((char*)p, pcnt);
     }
     
     if (show_dp) { show_dpoint(point_pos); }
+    
+    /* Restore lowbat */
+    control_lowbat(lowbatFlag);
+    
     wait_for_update();
 }
 
@@ -351,8 +369,7 @@ void TRH_LCD_DisplayString(uint8_t *ptr, bool show_dp, uint8_t point_pos) {
   * @retval None
   */
 void TRH_LCD_DisplayLowBat(bool low_bat) {
-    if (low_bat) { LCD_LOWBAT_SET(); }
-    else         { LCD_LOWBAT_RESET(); }
+    control_lowbat(low_bat);
     wait_for_update();
 }
 

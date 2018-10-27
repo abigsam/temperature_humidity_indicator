@@ -65,5 +65,7 @@ dkms.conf
 !/EWSTM8/*.eww
 !/EWSTM8/*.ewt
 
+#Other
+*.pdf
 
 
