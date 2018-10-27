@@ -21,6 +21,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "delay.h"
 
+/* Defines -------------------------------------------------------------------*/
+#define WAIT_WCNT_WRITE_READY()  { while (SET != RTC_GetFlagStatus(RTC_FLAG_WUTWF)) { } }
+#define GET_WUP_COUNTS_SEC(v)    ( (uint16_t) ( ((uint32_t)v * TRH_LSI_FREQ_HZ) / 16UL ) )
+#define GET_WUP_COUNTS_mS(v)     ( (uint16_t) ( ((uint32_t)v * TRH_LSI_FREQ_HZ) / 1000UL / 2UL ) )
     
 /**
   * @brief  Init RTC for work with LSI
@@ -72,25 +76,19 @@ static void sleep_wcnt(uint16_t wcnt_val)
   * @retval None
   */
 void sleep_s(uint32_t time_s) {
-    uint16_t time_wcnt = 0;
-    //
+    uint16_t wup_counts = 0;
+    /* Configure Wakeup counter clock divider:
+        RTC_WakeUpClock_RTCCLK_Div16
+    */
     RTC_WakeUpCmd(DISABLE);
     WAIT_WCNT_WRITE_READY();
-    RTC_WakeUpClockConfig(RTC_WakeUpClock_RTCCLK_Div16); // RTC_clock / 16
-    //
+    RTC_WakeUpClockConfig(RTC_WakeUpClock_RTCCLK_Div16);
+    /* Do sleep */
     do {
-        if (time_s > WCNT_MAX_S) {
-          //time_wcnt = WCNT_ONE_SECOND_DIV16 * WCNT_MAX_S;
-          time_wcnt = GET_WCNT_SEC(WCNT_MAX_S); // (20 * 33000)/16
-          time_s -= WCNT_MAX_S;
-        }
-        else {
-          //time_wcnt = WCNT_ONE_SECOND_DIV16 * time_s;
-          time_wcnt = GET_WCNT_SEC(time_s);
-        }
-        //
-        sleep_wcnt(time_wcnt);
-    } while (time_s > WCNT_MAX_S);
+        wup_counts = GET_WUP_COUNTS_SEC( ((time_s > WCNT_MAX_S) ? WCNT_MAX_S : time_s) );
+        time_s -= (time_s > WCNT_MAX_S) ? WCNT_MAX_S : time_s;
+        sleep_wcnt(wup_counts);
+    } while (time_s > 0u);
 }
 
 /**
@@ -101,23 +99,19 @@ void sleep_s(uint32_t time_s) {
   */
 void sleep_ms(uint32_t time_ms)
 {
-    uint16_t time_wcnt = 0;
-    //
+    uint16_t wup_counts = 0;
+    /* Configure Wakeup counter clock divider:
+        RTC_WakeUpClock_RTCCLK_Div2
+    */
     RTC_WakeUpCmd(DISABLE);
     WAIT_WCNT_WRITE_READY();
-    RTC_WakeUpClockConfig(RTC_WakeUpClock_RTCCLK_Div2); // RTC_clock / 2
-    //
+    RTC_WakeUpClockConfig(RTC_WakeUpClock_RTCCLK_Div2);
+    /* Do sleep */
     do {
-        if (time_ms > WCNT_MAX_MS) {
-          time_wcnt = GET_WCNT_MS(WCNT_MAX_MS); // 3900 * ((33000 / DIV2(2)) / 1000)
-          time_ms -= WCNT_MAX_MS;
-        }
-        else {
-          time_wcnt = GET_WCNT_MS(time_ms);
-        }
-        //
-        sleep_wcnt(time_wcnt);
-    } while (time_ms > WCNT_MAX_MS);
+        wup_counts = GET_WUP_COUNTS_mS( ((time_ms > WCNT_MAX_mS) ? WCNT_MAX_mS : time_ms) );
+        time_ms -= (time_ms > WCNT_MAX_mS) ? WCNT_MAX_mS : time_ms;
+        sleep_wcnt(wup_counts);
+    } while (time_ms > 0u);
 }
     
     

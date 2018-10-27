@@ -12,12 +12,14 @@
   *                  add define "BATTERY_mV" where low voltage specified in mV;
   *                  increase "LIGHTSENSOR_LEVEL" from 820 to 880
   *
+  * 27.10.18 v1.3 -- Fix sleep functiones: skip time less than MAX values;
+  *                  updated LSI frequency (measured with stopwatch)
+  * 
   ******************************************************************************
   * TODO:
   * -- Enable/disable SHT21 by pin
   * -- Decrease LCD refresh rate when temperature is low
   * -- Disable clock for I2C module when comunication no needed
-  * -- Problem with lowpower delay duration
   * -- Decrease number measure per time (measure ones in 3..5 minutes; between
   *    this time show old data
   * 
@@ -37,7 +39,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define FIRMWARE_VERSION        ("f12") //Three chars only!
+#define FIRMWARE_VERSION        ("f13") //Three chars only
 #define TEST_LSI                (0) //If need output LSI clock to PC4 set it to '1'
 //Time defines
 #define DISPLAY_TIME_S          (5)  //Update period for LCD in seconds (used on startup)
@@ -108,7 +110,7 @@ void main(void)
     * Init LCD
     **************************************/
     TRH_LCD_init(TRUE);
-    sleep_s(1);
+    sleep_s(1u);
     TRH_LCD_ShowAll();
     sleep_s(1u);
     TRH_LCD_clear();

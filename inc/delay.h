@@ -31,12 +31,9 @@
 #define DELAY10US_TIM_PREDIV_POV        ((uint8_t) 0)
 #define DELAY10US_TIM_RELOAD_VAL        ((uint8_t) (((HSI_HZ/100000UL)/SYSCLK_DIV) >> DELAY10US_TIM_PREDIV_POV)) //160 for SYSCLK_DIV = 1
 
-#define TRH_LSI_FREQ_HZ         (33000U) //LSI frequency, Hz
-#define WAIT_WCNT_WRITE_READY() { while (SET != RTC_GetFlagStatus(RTC_FLAG_WUTWF)) { } }
-#define WCNT_MAX_S              ((uint16_t) 20)
-#define WCNT_MAX_MS             ((uint16_t) 3900) // WKUP_MAX(65535) / [LSI(33000)/RTC_DIV(2)] ~= 3900
-#define GET_WCNT_SEC(v)         ( (uint16_t) ( ((uint32_t)v * (uint32_t)TRH_LSI_FREQ_HZ) / 16 ) )
-#define GET_WCNT_MS(v)          ( (uint16_t) ( (v * (TRH_LSI_FREQ_HZ / 1000)) / 2) )
+#define TRH_LSI_FREQ_HZ         ((uint32_t) 39500) //Measured LSI frequency, Hz
+#define WCNT_MAX_S              ((uint32_t) 20)
+#define WCNT_MAX_mS             ((uint32_t) 3000)
     
 void initRTCwakeup(void);
 static void sleep_wcnt(uint16_t wcnt_val);
