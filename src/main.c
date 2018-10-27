@@ -52,7 +52,7 @@
 #define LIGHT_CHECK_MIN         (5UL)   //Light checking period in minutes
 #define BAT_CHECK_HOURS         (24UL)  //Checking battery period, hours
 #define LIGHTSENSOR_LEVEL       (880u)  //Bigger value darker ambient light
-#define BATTERY_mV              (2000UL) //Lowbat voltage, mV; can be lower than 1224 mV
+#define BATTERY_mV              (2200UL) //Lowbat voltage, mV; can be lower than 1224 mV
 
 /* Private macro -------------------------------------------------------------*/
 #define DELAY_MS(us)            { delay_lowp_ms(us); }
